@@ -54,34 +54,6 @@ uint32_t checkRotary(int whichReading) {
     else return val[1];
 }
 
-// LED playing callback function
-void ledPlay(uint32_t time)
-{
-    static unsigned int angle = 0; // the degree of angle, used for calculating sine value
-    int delay = 5;                    // the callback delay
-
-    uint32_t rotaryReading = checkRotary(0);
-
-    uint32_t ledRotaryWeight = 99 - rotaryReading * 100 / 4096;
-
-    // Calculate PWM parameters for red, blue, and green sub-LEDs using sine function.
-    // Use phase shift of 60, 30, and 0 degrees for red, blue, and green
-    pwm_t red, blue, green;
-    red.pulseWidth = (ledRotaryWeight / 10) * (sine(angle + 60) * led.maxPulseWidth);
-    blue.pulseWidth = (ledRotaryWeight / 10) * (sine(angle + 30) * led.maxPulseWidth);
-    green.pulseWidth = (ledRotaryWeight / 10) * (sine(angle) * led.maxPulseWidth);
-    red.period = green.period = blue.period = led.pwmPeriod;
-
-    // Set the PWM parameters for LED
-    ledPwmSet(red, blue, green);
-
-    // Advance the angle by one degree, so a play period is 360 * 5 = 1800 ms
-    angle++;
-
-    // Schedule the next callback
-    schdCallback(ledPlay, time + delay);
-}
-
 // The buzzer play callback function
 void buzzerPlay(uint32_t time)
 {

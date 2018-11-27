@@ -11,6 +11,8 @@ ORDERED_OBJS += \
 "./main.obj" \
 "./pwmbuzzer.obj" \
 "./rotary.obj" \
+"./tm4c123gh6pm_startup_ccs.obj" \
+"../tm4c123gh6pm.cmd" \
 $(GEN_CMDS__FLAG) \
 -llibc.a \
 -l"/Users/mattstevenson/Desktop/ECE266-Labs/Util/Debug/Util.lib" \
@@ -134,14 +136,14 @@ BIN_OUTPUTS__QUOTED += \
 
 
 # All Target
-all: $(OBJS) $(GEN_CMDS)
+all: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@$(MAKE) --no-print-directory -Onone "SynthProject.out"
 
 # Tool invocations
-SynthProject.out: $(OBJS) $(GEN_CMDS)
+SynthProject.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: "$@"'
 	@echo 'Invoking: ARM Linker'
-	"/Applications/ti/ccsv8/tools/compiler/ti-cgt-arm_18.1.4.LTS/bin/armcl" -mv4 --code_state=32 -me -g --diag_warning=225 --diag_wrap=off --display_error_number -z -m"SynthProject.map" -i"/Applications/ti/ccsv8/tools/compiler/ti-cgt-arm_18.1.4.LTS/lib" -i"/Applications/ti/ccsv8/tools/compiler/ti-cgt-arm_18.1.4.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="SynthProject_linkInfo.xml" --rom_model -o "SynthProject.out" $(ORDERED_OBJS)
+	"/Applications/ti/ccsv8/tools/compiler/ti-cgt-arm_18.1.4.LTS/bin/armcl" -mv7M4 --code_state=16 --float_support=FPv4SPD16 -me --define=ccs="ccs" --define=PART_TM4C123GH6PM -g --gcc --diag_warning=225 --diag_wrap=off --display_error_number --abi=eabi -z -m"SynthProject.map" --heap_size=0 --stack_size=512 -i"/Applications/ti/ccsv8/tools/compiler/ti-cgt-arm_18.1.4.LTS/lib" -i"/Applications/ti/ccsv8/tools/compiler/ti-cgt-arm_18.1.4.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="SynthProject_linkInfo.xml" --rom_model -o "SynthProject.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 
@@ -155,8 +157,8 @@ SynthProject.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "main.obj" "pwmbuzzer.obj" "rotary.obj" 
-	-$(RM) "main.d" "pwmbuzzer.d" "rotary.d" 
+	-$(RM) "main.obj" "pwmbuzzer.obj" "rotary.obj" "tm4c123gh6pm_startup_ccs.obj" 
+	-$(RM) "main.d" "pwmbuzzer.d" "rotary.d" "tm4c123gh6pm_startup_ccs.d" 
 	-$(RM) "pwmbuzzer.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
