@@ -1,6 +1,7 @@
 # FIXED
 
 pwmbuzzer.obj: ../pwmbuzzer.c
+pwmbuzzer.obj: /Users/mattstevenson/Desktop/ECE266-Labs/project/src/pwmwaveform.h
 pwmbuzzer.obj: /Applications/ti/ccsv8/tools/compiler/ti-cgt-arm_18.1.4.LTS/include/stdint.h
 pwmbuzzer.obj: /Applications/ti/ccsv8/tools/compiler/ti-cgt-arm_18.1.4.LTS/include/sys/stdint.h
 pwmbuzzer.obj: /Applications/ti/ccsv8/tools/compiler/ti-cgt-arm_18.1.4.LTS/include/sys/cdefs.h
@@ -19,9 +20,9 @@ pwmbuzzer.obj: /Applications/ti/TivaWare_C_Series-2.1.4.178/driverlib/gpio.h
 pwmbuzzer.obj: /Applications/ti/TivaWare_C_Series-2.1.4.178/driverlib/timer.h
 pwmbuzzer.obj: /Applications/ti/TivaWare_C_Series-2.1.4.178/driverlib/sysctl.h
 pwmbuzzer.obj: /Users/mattstevenson/Desktop/ECE266-Labs/Util/launchpad.h
-pwmbuzzer.obj: ../pwmbuzzer.h
 
 ../pwmbuzzer.c: 
+/Users/mattstevenson/Desktop/ECE266-Labs/project/src/pwmwaveform.h: 
 /Applications/ti/ccsv8/tools/compiler/ti-cgt-arm_18.1.4.LTS/include/stdint.h: 
 /Applications/ti/ccsv8/tools/compiler/ti-cgt-arm_18.1.4.LTS/include/sys/stdint.h: 
 /Applications/ti/ccsv8/tools/compiler/ti-cgt-arm_18.1.4.LTS/include/sys/cdefs.h: 
@@ -40,4 +41,3 @@ pwmbuzzer.obj: ../pwmbuzzer.h
 /Applications/ti/TivaWare_C_Series-2.1.4.178/driverlib/timer.h: 
 /Applications/ti/TivaWare_C_Series-2.1.4.178/driverlib/sysctl.h: 
 /Users/mattstevenson/Desktop/ECE266-Labs/Util/launchpad.h: 
-../pwmbuzzer.h: 

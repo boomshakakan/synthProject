@@ -6,21 +6,29 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <math.h>
+#include <driverlib/sysctl.h>
+#include <inc/hw_ints.h>
+#include <inc/hw_i2c.h>
 #include "inc/hw_memmap.h"
+#include <driverlib/gpio.h>
+#include <driverlib/pin_map.h>
+#include <driverlib/i2c.h>
+#include <pwmwaveform.h>
 #include "launchpad.h"
+#include "seg7.h"
 #include "rotary.h"
-#include "pwmbuzzer.h"
 
 #define RED_LED                 GPIO_PIN_1
 #define BLUE_LED                GPIO_PIN_2
 #define GREEN_LED               GPIO_PIN_3
-#define BUZZER_CHECK_INTERVAL   30
-#define BUZZER_ON_TIME          200
-#define BUZZER_OFF_TIME         0
-#define BUZZER_MIN_PERIOD       95557 // (highest f, C5)
-#define BUZZER_MAX_PERIOD       191110 // 50MHz / 261.63 (lowest f, C4)
-#define BUZZER_MAX_PULSE_WIDTH  100 // used same max pulse width as in LED example
+#define WAVEFORM_CHECK_INTERVAL   10
+#define WAVEFORM_ON_TIME          500
+#define WAVEFORM_OFF_TIME         0
+#define WAVEFORM_MIN_PERIOD       95557  // (highest freq, C5)
+#define WAVEFORM_MAX_PERIOD       382225 // 50MHz / 130.813 (lowest freq, C3)
+#define WAVEFORM_MAX_PULSE_WIDTH  50    // used same max pulse width as in LED example
 
 typedef struct
 {
@@ -33,7 +41,7 @@ typedef struct
     int maxPeriod;      // maximum possible period
     int minPeriod;      // minimum possible period
     int maxPulseWidth;  // used same value as for LED example
-} buzzer_t;
+} SignalLimits;
 
 typedef struct
 {
@@ -43,17 +51,36 @@ typedef struct
     } state;
 } modeIndicator;
 
-typedef struct
-{
-    enum
-    {
-        Sine, Square, Triangle
-    } state;
-} waveForm;
-
-static volatile buzzer_t buzzer = {SwitchOn, false, 0, BUZZER_MAX_PERIOD, BUZZER_MIN_PERIOD, BUZZER_MAX_PULSE_WIDTH};
+static volatile SignalLimits waveform = {Off, false, 0, WAVEFORM_MAX_PERIOD, WAVEFORM_MIN_PERIOD, WAVEFORM_MAX_PULSE_WIDTH};
 static volatile modeIndicator led = {Inactive};
-static volatile waveForm wave = {Sine};
+
+// declare 7-segment codings for waveform type readings
+static uint8_t clearCoding[4] = {
+                 0b00000000,
+                 0b00000000,
+                 0b00000000,
+                 0b00000000
+};
+static uint8_t squareCoding[4] = {
+                 0b01101101,     // letter 'S'
+                 0b00111111,     // letter 'Q'
+                 0b00110111,     // letter 'U'
+                 0b01111110      // letter 'A'
+};
+
+static uint8_t triangleCoding[4] = {
+                0b01000110,      // letter 'T'
+                0b00001110,      // letter 'R'
+                0b00000110,      // letter 'I'
+                0b01111110       // letter 'A'
+};
+
+static uint8_t sineCoding[4] = {
+                0b01101101,      // letter 'S'
+                0b00000110,      // letter 'I'
+                0b00111110,      // letter 'N'
+                0b01001111       // letter 'E'
+};
 
 void turnLEDOn(uint8_t pin) {
     GPIOPinWrite(GPIO_PORTF_BASE, pin, pin);
@@ -63,19 +90,26 @@ void turnLEDOff(uint8_t pin) {
     GPIOPinWrite(GPIO_PORTF_BASE, pin, 0);
 }
 
-// a sine function that uses degree as input
+// waveform functions that use degree as input
 static inline double sine(unsigned int degree) {
     double radian = 2 * M_PI * ((double) (degree % 360) / 360);
     return sin(radian);
 }
 
 //static inline double triangle(unsigned int degree) {
+    // linear function that has a max at 1 and min at 0
 
 //}
 
-//static inline int square(unsigned int degree) {
-
-//}
+// square wave flips between 1 and 0 dependent on the input degree
+static inline int square(unsigned int degree) {
+    if ((degree / 90) % 2 == 0) {
+        return 0;
+    }
+    else {
+        return 1;
+    }
+}
 
 // make a function for the triangle waveform
 
@@ -93,7 +127,7 @@ uint32_t checkRotary(int whichReading) {
 
 void readPushbutton(uint32_t time) {
 
-    uint32_t delay = 20;
+    uint32_t delay = 100;
 
     int button = pbRead();
 
@@ -106,22 +140,23 @@ void readPushbutton(uint32_t time) {
         if (led.state == redMode) {
             turnLEDOff(RED_LED);
             led.state = Inactive;
-            buzzer.state = SwitchOff;
+            waveform.state = SwitchOff;
         }
         else if (led.state == greenMode) {
             turnLEDOff(GREEN_LED);
             led.state = Inactive;
-            buzzer.state = SwitchOff;
+            waveform.state = SwitchOff;
         }
         else if (led.state == blueMode) {
             turnLEDOff(BLUE_LED);
             led.state = Inactive;
-            buzzer.state = SwitchOff;
+            waveform.state = SwitchOff;
         }
         else {
             turnLEDOn(RED_LED);
+            seg7Update(sineCoding);
             led.state = redMode;
-            buzzer.state = SwitchOn;
+            waveform.state = SwitchOn;
         }
         break;
 
@@ -133,16 +168,19 @@ void readPushbutton(uint32_t time) {
             turnLEDOff(RED_LED);
             turnLEDOn(GREEN_LED);
             led.state = greenMode;
+            waveform.state = On;
         }
         else if (led.state == greenMode) {
             turnLEDOff(GREEN_LED);
             turnLEDOn(BLUE_LED);
             led.state = blueMode;
+            waveform.state = On;
         }
         else if (led.state == blueMode) {
             turnLEDOff(BLUE_LED);
             turnLEDOn(RED_LED);
             led.state = redMode;
+            waveform.state = On;
         }
         else {
             uprintf("Cannot change modes when system is inactive\n");
@@ -150,93 +188,112 @@ void readPushbutton(uint32_t time) {
         break;
     }
 
+    if (led.state == Inactive) {
+        seg7Update(clearCoding);
+    }
+
     schdCallback(readPushbutton, time + delay);
 }
 
 // The buzzer play callback function
-void buzzerPlay(uint32_t time) {
+void waveformPlay(uint32_t time) {
+
     static unsigned int angle = 0;
-    uint32_t delay = BUZZER_CHECK_INTERVAL; // the delay for next callback
+    uint32_t delay = WAVEFORM_CHECK_INTERVAL; // the delay for next callback
     uint32_t arr[2];
 
+    pwm_Waveform currWaveform;
+
+    // WHEN A STATE CHANGES WE WANT TO SAVE THE SETTINGS OF THE PREVIOUS STATE
     arr[0] = checkRotary(0);
     arr[1] = checkRotary(1);
 
-    // checking that our values are read correctly
-    //uprintf("val[0]: %d\nval[1]: %d", arr[0], arr[1]);
+    uprintf("Rotary 1: %d\nRotary 2: %d\n", arr[0], arr[1]);
 
-    // check what values these return
-    uint32_t volumeWeight = 99 - arr[0] * 100 / 4096;
-    uint32_t periodWeight = 99 - arr[1] * 100 / 4096;
+    uint32_t weight1 = 99 - arr[0] * 100 / 4096;
+    uint32_t weight2 = 99 - arr[1] * 100 / 4096;
 
-    buzzerpwm_t currentBuzzer;
-
-    uprintf("volume Weight: %d\nperiod Weight: %d", volumeWeight, periodWeight);
-
-    currentBuzzer.period = periodWeight * ((buzzer.maxPeriod - buzzer.minPeriod) / 100) + buzzer.minPeriod;
-    currentBuzzer.pulseWidth = volumeWeight * buzzer.maxPulseWidth;
-    // VOLUME = DUTY CYCLE = pulseWidth / period
-    switch (wave.state) {
-    case Sine:
-        break;
-    case Square:
-        break;
-    case Triangle:
-        break;
+    if (led.state == redMode) {
+        // this mode will manipulate the volume and frequency of the tone
+        // weight1 -> volume
+        currWaveform.volumeWeight = weight1;
+        currWaveform.pulseWidth = weight1 * waveform.maxPulseWidth;
+        // weight2 -> frequency
+        currWaveform.periodWeight = weight2;
+        currWaveform.period = weight2 * ((waveform.maxPeriod - waveform.minPeriod) / 100) + waveform.minPeriod;
+    }
+    else if (led.state == greenMode) {
+        // AT THE MOMENT THIS DOES NOTHING
+        // arr[0] -> ?
+        // arr[1] -> ?
+    }
+    else if (led.state == blueMode) {
+        // weight1 -> waveform selector DONE!
+        switch (weight1 / 34) {
+        case 0:
+            currWaveform.type = Sine;
+            break;
+        case 1:
+            currWaveform.type = Square;
+            break;
+        case 2:
+            currWaveform.type = Triangle;
+            break;
+        }
+    }
+    else {
+        seg7Update(clearCoding);
     }
 
-    switch (buzzer.state) {
-    case Off:           // the buzzer system is turned off
-        break;
+    // VOLUME = DUTY CYCLE = pulseWidth / period
+    //currWaveform.period = currWaveform.periodWeight * ((waveform.maxPeriod - waveform.minPeriod) / 100) + waveform.minPeriod;
 
-    case On:            // the buzzer system is active, turn buzzer on and off
-        if (buzzer.buzzing)
-        {
-            // If the buzzer has been buzzing for enough time, turn it off
-            if ((buzzer.timeLeft -= BUZZER_CHECK_INTERVAL) <= 0) {
-                buzzerOff();
-                buzzer.buzzing = false;
-                buzzer.timeLeft = BUZZER_OFF_TIME;
-            }
+    if (led.state != Inactive) {
+        switch (currWaveform.type) {
+        case Sine:
+            seg7Update(sineCoding);
+            currWaveform.pulseWidth = (currWaveform.volumeWeight / 10) * (sine(angle) * waveform.maxPulseWidth);
+            break;
+        case Square:
+            seg7Update(squareCoding);
+            currWaveform.pulseWidth = (currWaveform.volumeWeight / 10) * (square(angle) * waveform.maxPulseWidth);
+            break;
+        case Triangle:
+            seg7Update(triangleCoding);
+            // apply triangle wave function to pulseWidth
+            break;
         }
-        else
-        {
-            // If the buzzer has been silent for enough time, turn it on
-            if ((buzzer.timeLeft -= BUZZER_CHECK_INTERVAL) <= 0) {
-                buzzerPwmSet(currentBuzzer);
-                buzzer.buzzing = true;
-                buzzer.timeLeft = BUZZER_ON_TIME;
-            }
-        }
-        break;
+    }
 
-    case SwitchOff:             // De-activate the buzzer system
-        if (buzzer.buzzing)
-            buzzerOff();
-        buzzer.state = Off;
-        buzzer.buzzing = Off;
+    switch (waveform.state) {
+    case Off:
         break;
-
-    case SwitchOn:              // Activate the buzzer system
-        buzzerPwmSet(currentBuzzer);
-        buzzer.state = On;
-        buzzer.buzzing = true;
-        buzzer.timeLeft = BUZZER_ON_TIME;
+    case On:
+        waveformPwmSet(currWaveform);
+        break;
+    case SwitchOff:
+        waveform.state = Off;
+        waveformOff();
+        break;
+    case SwitchOn:
+        waveform.state = On;
+        waveformPwmSet(currWaveform);
         break;
     }
 
     angle++;
     // schedule the next callback
-    schdCallback(buzzerPlay, time + delay);
+    schdCallback(waveformPlay, time + delay);
 }
 
 void main(void)
 {
     lpInit();
+    seg7Init();
     initRotary();
-    buzzerInit();
+    waveformInit();
 
-    schdCallback(buzzerPlay, 1001);
+    schdCallback(waveformPlay, 1001);
     schdCallback(readPushbutton, 1002);
 
     // Loop forever

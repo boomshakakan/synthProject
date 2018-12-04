@@ -9,8 +9,9 @@ GEN_CMDS__FLAG :=
 
 ORDERED_OBJS += \
 "./main.obj" \
-"./pwmbuzzer.obj" \
+"./pwmwaveform.obj" \
 "./rotary.obj" \
+"./seg7.obj" \
 "./tm4c123gh6pm_startup_ccs.obj" \
 "../tm4c123gh6pm.cmd" \
 $(GEN_CMDS__FLAG) \
@@ -157,9 +158,9 @@ SynthProject.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "main.obj" "pwmbuzzer.obj" "rotary.obj" "tm4c123gh6pm_startup_ccs.obj" 
-	-$(RM) "main.d" "pwmbuzzer.d" "rotary.d" "tm4c123gh6pm_startup_ccs.d" 
-	-$(RM) "pwmbuzzer.d" 
+	-$(RM) "main.obj" "pwmwaveform.obj" "rotary.obj" "seg7.obj" "tm4c123gh6pm_startup_ccs.obj" 
+	-$(RM) "main.d" "pwmwaveform.d" "rotary.d" "seg7.d" "tm4c123gh6pm_startup_ccs.d" 
+	-$(RM) "pwmwaveform.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

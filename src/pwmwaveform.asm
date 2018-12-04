@@ -9,7 +9,7 @@ PORTC			.field	GPIO_PORTC_BASE
 PIN_ROUTE_1		.field	GPIO_PC4_WT0CCP0
 
 				.asmfunc
-buzzerInit		PUSH	{lr}
+waveformInit		PUSH	{lr}
 
 				LDR 	r0, WTIMER_PERIPH
 				BL		SysCtlPeripheralEnable
@@ -52,7 +52,7 @@ buzzerInit		PUSH	{lr}
 				.endasmfunc
 
 				.asmfunc
-buzzerOff		PUSH 	{lr}
+waveformOff		PUSH 	{lr}
 
 				LDR		r0, WTIMER0
 				MOV 	r1, #TIMER_A
@@ -68,7 +68,7 @@ buzzerOff		PUSH 	{lr}
 				.endasmfunc
 
 				.asmfunc
-buzzerPwmSet	PUSH	{lr, r0}
+waveformPwmSet	PUSH	{lr, r0}
 
 				MOV		r2, r0, LSR #16
 				LDR		r0, WTIMER0

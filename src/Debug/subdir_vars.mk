@@ -7,51 +7,57 @@ CMD_SRCS += \
 ../tm4c123gh6pm.cmd 
 
 ASM_SRCS += \
-../pwmbuzzer.asm 
+../pwmwaveform.asm 
 
 C_SRCS += \
 ../main.c \
-../pwmbuzzer.c \
+../pwmwaveform.c \
 ../rotary.c \
+../seg7.c \
 ../tm4c123gh6pm_startup_ccs.c 
 
 C_DEPS += \
 ./main.d \
-./pwmbuzzer.d \
+./pwmwaveform.d \
 ./rotary.d \
+./seg7.d \
 ./tm4c123gh6pm_startup_ccs.d 
 
 OBJS += \
 ./main.obj \
-./pwmbuzzer.obj \
+./pwmwaveform.obj \
 ./rotary.obj \
+./seg7.obj \
 ./tm4c123gh6pm_startup_ccs.obj 
 
 ASM_DEPS += \
-./pwmbuzzer.d 
+./pwmwaveform.d 
 
 OBJS__QUOTED += \
 "main.obj" \
-"pwmbuzzer.obj" \
+"pwmwaveform.obj" \
 "rotary.obj" \
+"seg7.obj" \
 "tm4c123gh6pm_startup_ccs.obj" 
 
 C_DEPS__QUOTED += \
 "main.d" \
-"pwmbuzzer.d" \
+"pwmwaveform.d" \
 "rotary.d" \
+"seg7.d" \
 "tm4c123gh6pm_startup_ccs.d" 
 
 ASM_DEPS__QUOTED += \
-"pwmbuzzer.d" 
+"pwmwaveform.d" 
 
 C_SRCS__QUOTED += \
 "../main.c" \
-"../pwmbuzzer.c" \
+"../pwmwaveform.c" \
 "../rotary.c" \
+"../seg7.c" \
 "../tm4c123gh6pm_startup_ccs.c" 
 
 ASM_SRCS__QUOTED += \
-"../pwmbuzzer.asm" 
+"../pwmwaveform.asm" 
 
 

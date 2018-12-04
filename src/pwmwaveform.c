@@ -1,3 +1,4 @@
+#include <pwmwaveform.h>
 #include "stdint.h"
 #include "stdbool.h"
 #include "stdio.h"
@@ -7,7 +8,6 @@
 #include "driverlib/timer.h"
 #include "driverlib/sysctl.h"
 #include "launchpad.h"
-#include "pwmbuzzer.h"
 
 #define WTIMER0         WTIMER0_BASE
 #define WTIMER_PERIPH   SYSCTL_PERIPH_WTIMER0
@@ -20,7 +20,7 @@
  * BUZZER:         PC4, WT0CCP0, Timer 0-A
  */
 
-void buzzerInit() {
+void waveformInit() {
     SysCtlPeripheralEnable(WTIMER_PERIPH);
     SysCtlPeripheralEnable(BUZZER_PERIPH);
 
@@ -36,19 +36,19 @@ void buzzerInit() {
     TimerEnable(WTIMER0, TIMER_A);
 }
 
-void buzzerOn() {
+void waveformOn() {
     TimerLoadSet(WTIMER0, TIMER_A, 500000);
     TimerMatchSet(WTIMER0, TIMER_A, 250000);
 }
 
-void buzzerOff() {
+void waveformOff() {
     TimerLoadSet(WTIMER0, TIMER_A, 0);
     TimerMatchSet(WTIMER0, TIMER_A, 0);
 }
 
-void buzzerPwmSet(buzzerpwm_t buzzer) {
-    TimerLoadSet(WTIMER0, TIMER_A, buzzer.period);
-    TimerMatchSet(WTIMER0, TIMER_A, buzzer.pulseWidth);
+void waveformPwmSet(pwm_Waveform waveform) {
+    TimerLoadSet(WTIMER0, TIMER_A, waveform.period);
+    TimerMatchSet(WTIMER0, TIMER_A, waveform.pulseWidth);
 }
 
 
